@@ -46,8 +46,7 @@ def test_environment(max_steps: int = 100, delay: float = 0.1):
             total_reward += reward
             
             # Log step information
-            action_names = {0: "WAIT", 1: "JUMP", 2: "DUCK"}
-            action_name = action_names.get(action, "UNKNOWN")
+            action_name = "JUMP" if action == 1 else "WAIT"
             logger.info(
                 f"Step {step:3d}: Action={action_name}, Reward={reward:6.3f}, "
                 f"Total={total_reward:7.3f}, Done={terminated or truncated}"
@@ -113,8 +112,7 @@ def test_trained_model(model_path: str, max_steps: int = 500):
             total_reward += reward
             
             # Log step information
-            action_names = {0: "WAIT", 1: "JUMP", 2: "DUCK"}
-            action_name = action_names.get(action, "UNKNOWN")
+            action_name = "JUMP" if action == 1 else "WAIT"
             if step % 50 == 0:
                 logger.info(
                     f"Step {step:3d}: Action={action_name}, Reward={reward:6.3f}, "

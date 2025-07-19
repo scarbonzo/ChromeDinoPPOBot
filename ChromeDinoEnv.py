@@ -52,7 +52,7 @@ class ChromeDinoEnv(gym.Env):
             high=np.array([2, 1200, 100, 100, 1200, 200, 20, 1], dtype=np.float32),
             dtype=np.float32
         )
-        self.action_space = spaces.Discrete(3)  # 0: do nothing, 1: jump, 2: duck
+        self.action_space = spaces.Discrete(2)  # 0: do nothing, 1: jump
         
         # Environment state
         self.episode_steps = 0
@@ -256,8 +256,6 @@ class ChromeDinoEnv(gym.Env):
         # Execute action
         if action == 1:
             self._perform_jump()
-        elif action == 2:
-            self._perform_duck()
         
         # Small delay to allow game to update
         time.sleep(0.05)
@@ -288,134 +286,25 @@ class ChromeDinoEnv(gym.Env):
     def _perform_jump(self) -> None:
         """Execute a jump action in the game."""
         try:
-            # Check if driver is still valid
-            if not self._is_driver_valid():
-                logger.warning("Driver invalid, skipping jump action")
-                return
-                
             body = self.driver.find_element(By.TAG_NAME, 'body')
             body.send_keys(Keys.SPACE)
-        except (NoSuchElementException, WebDriverException) as e:
+        except NoSuchElementException:
             # Fallback to JavaScript
             try:
-                if self._is_driver_valid():
-                    self.driver.execute_script("document.dispatchEvent(new KeyboardEvent('keydown', {'keyCode': 32}));")
-            except Exception as js_error:
-                logger.warning(f"Failed to perform jump action: {e}, JS fallback failed: {js_error}")
-    
-    def _perform_duck(self) -> None:
-        """Execute a duck action in the game using JavaScript to avoid browser scrolling."""
-        try:
-            # Check if driver is still valid
-            if not self._is_driver_valid():
-                logger.warning("Driver invalid, skipping duck action")
-                return
-            
-            # Use JavaScript to directly control the T-Rex ducking without affecting browser scroll
-            duck_script = """
-            try {
-                if (typeof Runner !== 'undefined' && Runner.instance_) {
-                    var tRex = Runner.instance_.tRex;
-                    
-                    // Only duck if the T-Rex is on the ground (not jumping)
-                    if (tRex && !tRex.jumping && tRex.yPos >= tRex.groundYPos) {
-                        // Simulate the duck action by setting the ducking state
-                        tRex.setDuck(true);
-                        
-                        // Set a timeout to stop ducking after a short duration
-                        setTimeout(function() {
-                            if (tRex) {
-                                tRex.setDuck(false);
-                            }
-                        }, 200); // Duck for 200ms
-                        
-                        return true;
-                    } else {
-                        // If jumping, don't duck to avoid the falling issue
-                        return false;
-                    }
-                }
-                return false;
-            } catch (error) {
-                console.error('Duck action error:', error);
-                return false;
-            }
-            """
-            
-            success = self.driver.execute_script(duck_script)
-            
-            # Fallback: if direct T-Rex control fails, use a more careful keyboard approach
-            if not success:
-                self._perform_duck_fallback()
-                
-        except Exception as e:
-            logger.warning(f"Failed to perform duck action: {e}")
-            self._perform_duck_fallback()
-    
-    def _perform_duck_fallback(self) -> None:
-        """Fallback duck method that prevents browser scrolling."""
-        try:
-            if not self._is_driver_valid():
-                return
-                
-            # Prevent default scroll behavior and send duck command
-            fallback_script = """
-            try {
-                // Create a keydown event for DOWN arrow but prevent default scroll behavior
-                var event = new KeyboardEvent('keydown', {
-                    keyCode: 40,
-                    which: 40,
-                    key: 'ArrowDown',
-                    bubbles: true,
-                    cancelable: true
-                });
-                
-                // Prevent the default scroll behavior
-                event.preventDefault = function() { return false; };
-                
-                // Dispatch to the game canvas or body
-                var gameCanvas = document.querySelector('canvas') || document.body;
-                gameCanvas.dispatchEvent(event);
-                
-                return true;
-            } catch (error) {
-                console.error('Duck fallback error:', error);
-                return false;
-            }
-            """
-            
-            self.driver.execute_script(fallback_script)
-            
-        except Exception as e:
-            logger.warning(f"Duck fallback also failed: {e}")
-    
-    def _is_driver_valid(self) -> bool:
-        """Check if the WebDriver is still valid and responsive."""
-        try:
-            if not hasattr(self, 'driver') or self.driver is None:
-                return False
-            # Try to get current URL to test if driver is responsive
-            _ = self.driver.current_url
-            return True
-        except Exception:
-            return False
+                self.driver.execute_script("document.dispatchEvent(new KeyboardEvent('keydown', {'keyCode': 32}));")
+            except Exception as e:
+                logger.warning(f"Failed to perform jump action: {e}")
     
     def _is_game_crashed(self) -> bool:
         """Check if the game has crashed (dinosaur hit an obstacle)."""
         try:
-            # First check if driver is valid
-            if not self._is_driver_valid():
-                logger.warning("Driver invalid during crash check, assuming crashed")
-                return True
-                
             crashed = self.driver.execute_script(
                 "return (typeof Runner !== 'undefined' && Runner.instance_) ? Runner.instance_.crashed : false;"
             )
             return bool(crashed)
         except Exception as e:
             logger.warning(f"Failed to check crash status: {e}")
-            # If we can't check crash status, assume the game crashed to end the episode safely
-            return True
+            return False
     
     def _calculate_reward(self, crashed: bool) -> float:
         """Calculate reward for the current step.
