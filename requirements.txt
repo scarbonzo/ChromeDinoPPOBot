@@ -1,5 +1,18 @@
+# Core ML and RL dependencies
 gymnasium==0.29.1
-selenium==4.19.0
 stable-baselines3==2.3.2
 numpy==1.26.4
+
+# Web automation
+selenium==4.19.0
+
+# Monitoring and visualization
 tensorboard==2.15.0
+
+# Additional utilities
+torch>=2.0.0  # Required by stable-baselines3
+cloudpickle>=1.6.0  # For model serialization
+matplotlib>=3.5.0  # For plotting (optional)
+pandas>=1.5.0  # For data analysis (optional)
+tqdm>=4.67.1 # For progress bars (optional)
+rich>=14.0.0 # For rich console output (optional)
