@@ -25,17 +25,17 @@ class TrainingConfig:
     """Configuration class for training hyperparameters."""
     
     # Training parameters
-    TIMESTEPS = 500000  # Number of timesteps to train for
+    TIMESTEPS = 1_000_000  # Number of timesteps to train for
     NUM_ENVS = 1  # Number of parallel environments (keep at 1 for Chrome game)
     
     # PPO hyperparameters
     N_STEPS = 512  # Number of steps to run before updating the policy
-    BATCH_SIZE = 64  # Batch size for training
-    N_EPOCHS = 10  # Number of epochs to run before updating the policy
-    LEARNING_RATE = 3e-4  # Learning rate for the policy
+    BATCH_SIZE = 128  # Batch size for training
+    N_EPOCHS = 5  # Number of epochs to run before updating the policy
+    LEARNING_RATE = 5e-4  # Learning rate for the policy
     ENT_COEF = 0.025  # Entropy coefficient (encourage exploration)
     CLIP_RANGE = 0.25  # Clip range for the policy
-    CLIP_RANGE_VF = 0.25  # Clip range for the value function
+    CLIP_RANGE_VF = 0.20  # Clip range for the value function
     GAMMA = 0.995  # Discount factor
     GAE_LAMBDA = 0.95  # GAE lambda parameter
     
