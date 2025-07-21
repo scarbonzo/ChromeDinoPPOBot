@@ -8,6 +8,7 @@ import time
 import logging
 import numpy as np
 from ChromeDinoEnv import ChromeDinoEnv
+from ChromeDinoImageEnv import ChromeDinoImageEnv
 from stable_baselines3 import PPO
 import argparse
 
@@ -15,18 +16,20 @@ import argparse
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def test_environment(max_steps: int = 100, delay: float = 0.1):
+def test_environment(max_steps: int = 100, delay: float = 0.1, use_images: bool = False):
     """Test the Chrome Dinosaur environment with random actions.
     
     Args:
         max_steps: Maximum number of steps to run
         delay: Delay between steps in seconds
+        use_images: Whether to use image-based environment
     """
-    logger.info("Starting environment test with random actions")
+    env_type = "image-based" if use_images else "state-based"
+    logger.info(f"Starting {env_type} environment test with random actions")
     
     try:
         # Create environment
-        env = ChromeDinoEnv()
+        env = ChromeDinoImageEnv() if use_images else ChromeDinoEnv()
         
         # Reset environment
         obs, info = env.reset()
@@ -79,18 +82,20 @@ def test_environment(max_steps: int = 100, delay: float = 0.1):
             env.close()
             logger.info("Environment closed")
 
-def test_trained_model(model_path: str, max_steps: int = 500):
+def test_trained_model(model_path: str, max_steps: int = 500, use_images: bool = False):
     """Test a trained PPO model on the Chrome Dinosaur game.
     
     Args:
         model_path: Path to the trained model
         max_steps: Maximum number of steps to run
+        use_images: Whether to use image-based environment
     """
-    logger.info(f"Testing trained model from {model_path}")
+    env_type = "image-based" if use_images else "state-based"
+    logger.info(f"Testing {env_type} trained model from {model_path}")
     
     try:
         # Create environment
-        env = ChromeDinoEnv()
+        env = ChromeDinoImageEnv() if use_images else ChromeDinoEnv()
         
         # Load trained model
         model = PPO.load(model_path)
@@ -145,6 +150,8 @@ def main():
     parser = argparse.ArgumentParser(description="Test Chrome Dinosaur environment")
     parser.add_argument('--mode', choices=['random', 'model'], default='random',
                        help='Test mode: random actions or trained model')
+    parser.add_argument('--env-type', choices=['state', 'image'], default='state',
+                       help='Environment type: state-based or image-based')
     parser.add_argument('--model-path', type=str, default='ppo_chromedino.zip',
                        help='Path to trained model (for model mode)')
     parser.add_argument('--max-steps', type=int, default=100,
@@ -153,11 +160,12 @@ def main():
                        help='Delay between steps in seconds')
     
     args = parser.parse_args()
+    use_images = args.env_type == 'image'
     
     if args.mode == 'random':
-        test_environment(args.max_steps, args.delay)
+        test_environment(args.max_steps, args.delay, use_images)
     else:
-        test_trained_model(args.model_path, args.max_steps)
+        test_trained_model(args.model_path, args.max_steps, use_images)
 
 if __name__ == "__main__":
     main()
